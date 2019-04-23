@@ -159,8 +159,7 @@ def prepare_data(deepmind = False, seperate=False):
                     protein_seq_dict[protein] = seq
                 else:
                     RNA_seq_dict[RNA] = seq
-                index = index + 1
-    #name_list = read_name_from_lncRNA_fasta('ncRNA-protein/lncRNA_RNA.fa')           
+                index = index + 1        
     groups = ['AGV', 'ILFP', 'YMTS', 'HNQW', 'RK', 'DE']
     group_dict = TransDict_from_list(groups)
     protein_tris = get_3_protein_trids()
@@ -281,8 +280,6 @@ def get_blend_data(j, clf, skf, X_test, X_dev, Y_dev, blend_train, blend_test):
             
             # This output will be the basis for our blended classifier to train against,
             # which is also the output of our classifiers
-            #blend_train[cv_index, j] = clf.predict(X_cv)
-            #blend_test_j[:, i] = clf.predict(X_test)
             blend_train[cv_index, j] = clf.predict_proba(X_cv)[:,1]
             blend_test_j[:, i] = clf.predict_proba(X_test)[:,1]
         # Take the mean of the predictions of the cross validation set
@@ -604,11 +601,6 @@ def DeepPLRPIM():
         skf = list(StratifiedKFold(train_label_new, num_classifier))  
         class_index = 0
         prefilter_train, prefilter_test, prefilter_train_bef, prefilter_test_bef = autoencoder_two_subnetwork_fine_tuning(train1, train2, train_label, test1, test2, test_label)
-        #X_train1_tmp, X_test1_tmp, X_train2_tmp, X_test2_tmp, model = autoencoder_two_subnetwork_fine_tuning(train1, train2, train_label, test1, test2, test_label)
-        #model = autoencoder_two_subnetwork_fine_tuning(train1, train2, train_label, test1, test2, test_label)
-        #model = merge_seperate_network(train1, train2, train_label)
-        #proba = model.predict_proba([test1, test2])[:1]
-        
         
         real_labels = []
         for val in test_label:
@@ -630,11 +622,7 @@ def DeepPLRPIM():
         '''
         tmp_aver = [0] * len(real_labels)
         print 'deep autoencoder'
-        #parameters = {'kernel': ['linear','poly', 'rbf'], 'C': [1, 2, 3, 4, 5, 6, 10], 'gamma': [0.5,1,2,4, 6, 8]}
-        #svr = svm.SVC(probability = True)
-        #clf1 = grid_search.GridSearchCV(svr, parameters, cv=3)
         clf = RandomForestClassifier(n_estimators=50)
-	#eclf = VotingClassifier(estimators=[('svm', clf1),('rf', clf2)], voting='soft')  
         clf.fit(prefilter_train, train_label_new)
         ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
         all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]
