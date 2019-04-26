@@ -611,7 +611,7 @@ def PLRPIM():
         print acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score  
         all_performance_blend.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])     
 
-	print 'Ensemble Classifiers raw feature'
+	print 'Ensemble Classifiers'
 	class_index = class_index + 1
         prefilter_train = np.concatenate((train1, train2), axis = 1)
         prefilter_test = np.concatenate((test1, test2), axis = 1)
