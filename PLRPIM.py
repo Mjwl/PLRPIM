@@ -459,7 +459,7 @@ def plot_roc_curve(labels, probality, legend_text, auc_tag = True):
     else:
         rects1 = plt.plot(fpr, tpr, label=legend_text )
 
-def DeepPLRPIM():
+def PLRPIM():
     X, labels = prepare_data(seperate = True)
     X_data1, X_data2 = transfer_array_format(X)
     print X_data1.shape, X_data2.shape
@@ -645,7 +645,7 @@ def DeepPLRPIM():
     print 'mean performance of stacked ensembling'
     print np.mean(np.array(all_performance_blend), axis=0)
     print '---' * 50
-    print 'mean performance of RPISeq_RF'
+    print 'mean performance of RPI Sequence RF'
     print np.mean(np.array(all_performance_rf), axis=0)
     print '---' * 50   
     print 'mean performance of RPI-SAN'
@@ -690,4 +690,4 @@ def transfer_label_from_prob(proba):
 
 
 if __name__=="__main__":
-    DeepPLRPIM()
+    PLRPIM()
