@@ -43,7 +43,7 @@ from keras.constraints import maxnorm
 
 def get_4_trids():
     nucle_com = []
-    chars = ['A', 'C', 'G', 'U']
+    chars = ['A', 'C', 'G', 'T']
     base=len(chars)
     end=len(chars)**4
     for i in range(0,end):
@@ -483,7 +483,6 @@ def PLRPIM():
     all_prob[3] = []
     all_prob[4] = []
     all_prob[5] = []
-    all_averrage = []
     for fold in range(num_cross_val):
         train1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val != fold])
         test1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val == fold])
