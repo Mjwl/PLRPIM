@@ -270,7 +270,7 @@ def multiple_layer_autoencoder(X_train, X_test, activation = 'linear', batch_siz
         print('Training the layer {}: Input {} -> Output {}'.format(i, n_in, n_out))
         # Create AE and training
         ae = Sequential()
-        encoder = containers.Sequential([Dense(n_in, n_out, activation=activation, , W_regularizer=regularizers.l2(0.01), b_regularizer= regularizers.l1(0.01))])
+        encoder = containers.Sequential([Dense(n_in, n_out, activation=activation, , W_regularizer=regularizers.l2(0.0001), b_regularizer= regularizers.l1(0.0001))])
         decoder = containers.Sequential([Dense(n_out, n_in, activation=activation)])
         ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
                            output_reconstruction=False))
