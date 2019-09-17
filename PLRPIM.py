@@ -261,95 +261,6 @@ def get_blend_data(j, clf, skf, X_test, X_dev, Y_dev, blend_train, blend_test):
     
         print 'Y_dev.shape = %s' % (Y_dev.shape)
 
-def multiple_autoencoder_extract_feature(dataset = 'RPI-Pred'):
-    X, labels = get_data(dataset)
-    y, encoder = preprocess_labels(labels)
-    num_cross_val = 5
-    batch_size  = 50
-    nb_epoch = 20
-    all_performance = []
-    all_performance_rf = []
-    all_performance_lgb = []
-    all_performance_ensemb = []
-    all_performance_ae = []
-    all_performance_rf_seq = []
-    all_performance_chem = []
-    all_performance_blend = []
-    activation = 'relu' #'linear' #'relu, softmax, tanh'
-    for fold in range(num_cross_val):
-        train = []
-        test = []
-        train = np.array([x for i, x in enumerate(X) if i % num_cross_val != fold])
-        test = np.array([x for i, x in enumerate(X) if i % num_cross_val == fold])
-        train_label = np.array([x for i, x in enumerate(y) if i % num_cross_val != fold])
-        test_label = np.array([x for i, x in enumerate(y) if i % num_cross_val == fold])
-
-        real_labels = []
-        for val in test_label:
-            if val[0] == 1:
-                real_labels.append(0)
-            else:
-                real_labels.append(1)
-
-        train_label_new = []
-        for val in train_label:
-            if val[0] == 1:
-                train_label_new.append(0)
-            else:
-                train_label_new.append(1)
-        blend_train = np.zeros((train.shape[0], 5)) # Number of training data x Number of classifiers
-        blend_test = np.zeros((test.shape[0], 5)) # Number of testing data x Number of classifiers 
-        skf = list(StratifiedKFold(train_label_new, 5, shuffle=True,))       
-        class_index = 0                   
-        encoders = multiple_layer_autoencoder(train, test, activation = 'sigmoid', batch_size = 100, nb_epoch = 20, last_dim = 128, weight_reg = regularizers.l2(0.01), activity_reg = regularizers.l1(0.01))
-        prefilter_train = np.copy(train)
-        prefilter_test = np.copy(test) 
-        for ae in encoders:
-            prefilter_train = ae.predict(prefilter_train)
-            print prefilter_train.shape
-            prefilter_test = ae.predict(prefilter_test)
-            
-        clf = RandomForestClassifier(n_estimators=50)
-        clf.fit(prefilter_train, train_label_new)
-        y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
-        y_pred = transfer_label_from_prob(y_pred_prob)
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), y_pred,  real_labels)
-        print acc, precision, sensitivity, specificity, MCC
-        all_performance_ae.append([acc, precision, sensitivity, specificity, MCC])
-        print '---' * 50
-        
-        bclf = LogisticRegression()
-        bclf.fit(blend_train, train_label_new)
-        Y_test_predict = bclf.predict(blend_test)
-        print 'blend result'
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), Y_test_predict,  real_labels)
-        print acc, precision, sensitivity, specificity, MCC   
-        all_performance_blend.append([acc, precision, sensitivity, specificity, MCC])     
-        print '---' * 50
-        
-        '''
-        print 'ensemble deep learning and rf'
-        ensemb_prob = get_preds( y_pred_prob, y_pred_rf_prob, ae_y_pred, [0.3, 0.30, 0.4])       
-        ensemb_label = transfer_label_from_prob(ensemb_prob)
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), ensemb_label,  real_labels)
-        print acc, precision, sensitivity, specificity, MCC
-        all_performance_ensemb.append([acc, precision, sensitivity, specificity, MCC]) 
-        print '---' * 50
-        '''
-    print 'in summary'
-    print 'mean performance of chem autoencoder without fine tunning'
-    print np.mean(np.array(all_performance_ae), axis=0)  
-    print '---' * 50
-    print 'mean performance of sequence autoencoder'
-    print np.mean(np.array(all_performance), axis=0)
-    print '---' * 50   
-    print 'mean performance of only chem using RF'
-    print np.mean(np.array(all_performance_svm), axis=0)
-    print '---' * 50     
-    print 'mean performance of blend fusion'
-    print np.mean(np.array(all_performance_blend), axis=0) 
-    print '---' * 50 
-     
 def multiple_layer_autoencoder(X_train, X_test, activation = 'linear', batch_size = 100, nb_epoch = 20, last_dim = 64):
     nb_hidden_layers = [X_train.shape[1], 256, 128, last_dim]
     X_train_tmp = np.copy(X_train)
@@ -359,7 +270,7 @@ def multiple_layer_autoencoder(X_train, X_test, activation = 'linear', batch_siz
         print('Training the layer {}: Input {} -> Output {}'.format(i, n_in, n_out))
         # Create AE and training
         ae = Sequential()
-        encoder = containers.Sequential([Dense(n_in, n_out, activation=activation)])
+        encoder = containers.Sequential([Dense(n_in, n_out, activation=activation, , W_regularizer=regularizers.l2(0.01), b_regularizer= regularizers.l1(0.01))])
         decoder = containers.Sequential([Dense(n_out, n_in, activation=activation)])
         ae.add(AutoEncoder(encoder=encoder, decoder=decoder,
                            output_reconstruction=False))
