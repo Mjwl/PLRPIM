@@ -379,21 +379,28 @@ def PLRPIM():
     y, encoder = preprocess_labels(labels)
     
     num_cross_val = 5
-    all_performance_bef = []
-    all_performance_lgb = []
+    all_performance = []
     all_performance_rf = []
-    all_performance_blend1 = []
-    all_performance_blend = []
-    all_performance_ensemb = []
+    all_performance_bef = []    
+    all_performance_adb = []
+    all_performance_dt = []
+    all_performance_gb = []
+    all_performance_xgb = []
+    all_performance_lgb = []    
+    all_performance_ensemb = []      
+    
     all_labels = []
     all_prob = {}
-    num_classifier = 5
+    num_classifier = 3
     all_prob[0] = []
     all_prob[1] = []
     all_prob[2] = []
     all_prob[3] = []
     all_prob[4] = []
     all_prob[5] = []
+    all_prob[6] = []
+    all_prob[7] = []
+    all_prob[8] = []
     for fold in range(num_cross_val):
         train1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val != fold])
         test1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val == fold])
@@ -441,156 +448,231 @@ def PLRPIM():
         ae_y_pred_prob = clf.predict(prefilter_test1)
         '''
         tmp_aver = [0] * len(real_labels)
-        print 'deep autoencoder'
-        clf = RandomForestClassifier(n_estimators=50)  
+        print 'deep autoencoder'        
+        clf = RandomForestClassifier(n_estimators=50)	
         clf.fit(prefilter_train, train_label_new)
         ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
         all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]
         tmp_aver = [val1 + val2/3 for val1, val2 in zip(ae_y_pred_prob, tmp_aver)]
-        proba = transfer_label_from_prob(ae_y_pred_prob)
-        #pdb.set_trace()            
+        proba = transfer_label_from_prob(ae_y_pred_prob)                 
         acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
         fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-	auc_score = auc(fpr, tpr)
+	auc_score = auc(fpr, tpr)        
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
         aupr_score = auc(recall, precision1)
         print acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
-        #all_performance.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
-        get_blend_data(class_index, RandomForestClassifier(n_estimators=50), skf, prefilter_test, prefilter_train, np.array(train_label_new), blend_train, blend_test)
+        all_performance.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
         
         print 'deep autoencoder without fine tunning'
-        class_index = class_index + 1
-	clf = RandomForestClassifier(n_estimators=50)  
+        class_index = class_index + 1        
+	clf = RandomForestClassifier(n_estimators=50)         
         clf.fit(prefilter_train, train_label_new)
         ae_y_pred_prob_bef = clf.predict_proba(prefilter_test_bef)[:,1]
         all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob_bef]
         tmp_aver = [val1 + val2/3 for val1, val2 in zip(ae_y_pred_prob_bef, tmp_aver)]
-        proba = transfer_label_from_prob(ae_y_pred_prob_bef)            
+        proba = transfer_label_from_prob(ae_y_pred_prob_bef)                   
         acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
         fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-        auc_score = auc(fpr, tpr)
+        auc_score = auc(fpr, tpr)	
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
         aupr_score = auc(recall, precision1)
         print acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
         all_performance_bef.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
-
-	print 'RPISeq_RF'
-        class_index = class_index + 1
-	clf = RandomForestClassifier(n_estimators=50)
+        
+	print 'Random Forest raw feature'
+	class_index = class_index + 1
+	clf = RandomForestClassifier(n_estimators=50)        
         clf.fit(prefilter_train, train_label_new)
         ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
-        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
         proba = transfer_label_from_prob(ae_y_pred_prob)
 
         acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
         fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-        auc_score = auc(fpr, tpr)
+        auc_score = auc(fpr, tpr)        
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
-        aupr_score = auc(recall, precision1)
+        aupr_score = auc(recall, precision1)        
         print "RF :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
-	all_performance_rf.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
-        get_blend_data(class_index, RandomForestClassifier(n_estimators=70), skf, prefilter_test, prefilter_train, np.array(train_label_new), blend_train, blend_test) 	
-	              
-        class_index = class_index + 1
-	bclf = RandomForestClassifier(n_estimators=50)
-        bclf.fit(blend_train, train_label_new)
-        stack_y_prob = bclf.predict_proba(blend_test)[:,1]
-        all_prob[class_index] = all_prob[class_index] + [val for val in stack_y_prob]
-        Y_test_predict = bclf.predict(blend_test)
-        print 'RPI-SAN stacked ensembling'
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), Y_test_predict,  real_labels)
-        fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-        auc_score = auc(fpr, tpr)
-        precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
-        aupr_score = auc(recall, precision1)
-        print acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score  
-        all_performance_blend1.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])     
+	all_performance_rf.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])        
+        
+	print 'AdaBoost raw feature'
+	class_index = class_index + 1	
+        clf = AdaBoostClassifier(n_estimators=50)        
+        clf.fit(prefilter_train, train_label_new)
+        ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
+        proba = transfer_label_from_prob(ae_y_pred_prob)
 
-        class_index = class_index + 1
-        bclf = LogisticRegression()
-        bclf.fit(blend_train, train_label_new)
-        stack_y_prob = bclf.predict_proba(blend_test)[:,1]
-        all_prob[class_index] = all_prob[class_index] + [val for val in stack_y_prob]
-        Y_test_predict = bclf.predict(blend_test)
-        print 'stacked ensembling'
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), Y_test_predict,  real_labels)
+        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
         fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-        auc_score = auc(fpr, tpr)
+        auc_score = auc(fpr, tpr)        
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
-        aupr_score = auc(recall, precision1)
-        print acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score  
-        all_performance_blend.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])     
+        aupr_score = auc(recall, precision1)        
+        print "adb :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+	all_performance_adb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
+        
+	print 'Decision Tree raw feature'
+	class_index = class_index + 1	
+        clf = DecisionTreeClassifier()
+        clf.fit(prefilter_train, train_label_new)
+        ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
+        proba = transfer_label_from_prob(ae_y_pred_prob)
 
-	print 'Ensemble Classifiers'
+        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
+        fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
+        auc_score = auc(fpr, tpr)        
+        precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
+        aupr_score = auc(recall, precision1)       
+        print "dt :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+	all_performance_dt.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
+        
+	print 'Gradient boosting raw feature'
+	class_index = class_index + 1
+        clf = GradientBoostingClassifier(n_estimators=70, random_state=7)
+        clf.fit(prefilter_train, train_label_new)
+        ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
+        proba = transfer_label_from_prob(ae_y_pred_prob)
+
+        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
+        fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
+        auc_score = auc(fpr, tpr)        
+        precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
+        aupr_score = auc(recall, precision1)        
+        print "GB :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+	all_performance_gb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
+        
+	print 'Extreme Gradient boosting raw feature'
+	class_index = class_index + 1
+        clf = XGBClassifier()
+        clf.fit(prefilter_train, train_label_new)
+        ae_y_pred_prob = clf.predict_proba(prefilter_test)[:,1]
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
+        proba = transfer_label_from_prob(ae_y_pred_prob)
+
+        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
+        fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
+        auc_score = auc(fpr, tpr)        
+        precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
+        aupr_score = auc(recall, precision1)        
+        print "XGB :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+	all_performance_xgb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])        
+
+	print 'Light Gradient boosting raw feature'
 	class_index = class_index + 1
         prefilter_train = np.concatenate((train1, train2), axis = 1)
         prefilter_test = np.concatenate((test1, test2), axis = 1)
 
-	clf2 = RandomForestClassifier(n_estimators=50)
-	lgmodel = lgb.LGBMClassifier(boosting_type='gbdt',
+        lgmodel = lgb.LGBMClassifier(boosting_type='gbdt',
         objective=None, 
         learning_rate=0.5,
         colsample_bytree=1,
         subsample=1,
         random_state=None,
-        n_estimators=300,
-        num_leaves=100, max_depth=20, num_class=None)
-	eclf = VotingClassifier(estimators=[('lgb',lgmodel),('rf', clf2)], voting='soft')
+        n_estimators=500,
+        num_leaves=200, max_depth=50, num_class=None)
+	print ('begin to predict data')
+	lgmodel.fit(prefilter_train, train_label_new)
+	pred_period = lgmodel.predict(prefilter_test)
+        all_prob[class_index] = all_prob[class_index] + [val for val in pred_period]
+	proba = transfer_label_from_prob(pred_period)
+	acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
+        fpr, tpr, auc_thresholds = roc_curve(real_labels, pred_period)
+        auc_score = auc(fpr, tpr)        
+        precision1, recall, pr_threshods = precision_recall_curve(real_labels, pred_period)
+        aupr_score = auc(recall, precision1)        
+        print "LGBM :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+	all_performance_lgb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
+
+
+        print ('ExtraTrees')
+        class_index = class_index + 1
+	prefilter_train = np.concatenate((train1, train2), axis = 1)
+        prefilter_test = np.concatenate((test1, test2), axis = 1)
+
+        etree = ExtraTreesClassifier()
+        etree.fit(prefilter_train, train_label_new)
+        etree_proba = etree.predict_proba(prefilter_test)[:, 1]
+        all_prob[class_index] = all_prob[class_index] + [val for val in etree_proba]
+        tmp_aver = [val1 + val2 / 4 for val1, val2 in zip(etree_proba, tmp_aver)]
+        y_pred_knn = transfer_label_from_prob(etree_proba)       
+        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), y_pred_knn, real_labels)
+	fpr, tpr, auc_thresholds = roc_curve(real_labels, y_pred_knn)
+        auc_score = auc(fpr, tpr)        
+        precision1, recall, pr_threshods = precision_recall_curve(real_labels, y_pred_knn)
+        aupr_score = auc(recall, precision1)
+        print "ExtraTrees :",acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
+        all_performance_knn.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])         
+
+	print 'Ensemble Classifiers raw feature'
+	class_index = class_index + 1
+        prefilter_train = np.concatenate((train1, train2), axis = 1)
+        prefilter_test = np.concatenate((test1, test2), axis = 1)
+
+	clf2 = RandomForestClassifier(n_estimators=70)        
+	etree = ExtraTreesClassifier(n_estimators=70)
+	clf3 = XGBClassifier()
+	clf5 = GradientBoostingClassifier(n_estimators=70, random_state=7)
+	lgmodel = lgb.LGBMClassifier(boosting_type='gbdt',
+        objective=None, 
+        learning_rate=0.1,
+        colsample_bytree=1,
+        subsample=1,
+        random_state=None,
+        n_estimators=500,
+        num_leaves=200, max_depth=50, num_class=None)	
+	eclf = VotingClassifier(estimators=[('lgb', lgmodel), ('rf', clf2)], voting='soft')	
 	eclf.fit(prefilter_train, train_label_new)
 	ae_y_pred_prob = eclf.predict_proba(prefilter_test)[:,1]
-        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]
-        proba = transfer_label_from_prob(ae_y_pred_prob)         
+        all_prob[class_index] = all_prob[class_index] + [val for val in ae_y_pred_prob]        
+        proba = transfer_label_from_prob(ae_y_pred_prob)        
         acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), proba,  real_labels)
         fpr, tpr, auc_thresholds = roc_curve(real_labels, ae_y_pred_prob)
-        auc_score = auc(fpr, tpr)
+        auc_score = auc(fpr, tpr)	
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, ae_y_pred_prob)
         aupr_score = auc(recall, precision1)
         print "Ens :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
-        all_performance_ensemb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
-        print '---' * 50
+        all_performance_ensemb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score]) 
+        print '---' * 50      
         
-    print 'mean performance of PLRPIM'
-    print np.mean(np.array(all_performance_ensemb), axis=0)
-    print '---' * 50 
-    print 'mean performance of stacked ensembling'
-    print np.mean(np.array(all_performance_blend), axis=0)
-    print '---' * 50
-    print 'mean performance of RPI Sequence RF'
+    print 'mean performance of random forest'
     print np.mean(np.array(all_performance_rf), axis=0)
+    print '---' * 50    
+    print 'mean performance of AdaBoost'
+    print np.mean(np.array(all_performance_adb), axis=0)
     print '---' * 50   
-    print 'mean performance of RPI-SAN'
-    print np.mean(np.array(all_performance_blend1), axis=0)
-    print '---' * 50
+    print 'mean performance of Decision Tree'
+    print np.mean(np.array(all_performance_dt), axis=0)
+    print '---' * 50 
+    print 'mean performance of Gradient Boosting'
+    print np.mean(np.array(all_performance_gb), axis=0)
+    print '---' * 50 
+    print 'mean performance of Extreme Gradient Boosting'
+    print np.mean(np.array(all_performance_xgb), axis=0)
+    print '---' * 50  
+    print 'mean performance of Light Gradient Boosting'
+    print np.mean(np.array(all_performance_lgb), axis=0)
+    print '---' * 50      
+    print 'mean performance of Classifier Ensemble'
+    print np.mean(np.array(all_performance_ensemb), axis=0)
+    print '---' * 50   
     
-    fileObject = open('PLRPIMresult.txt', 'w')
-    for i in all_performance_ensemb:
-        k=' '.join([str(j) for j in i])
-	fileObject.write(k+"\n")
-    fileObject.write('\n')
-    for i in all_performance_blend: 
-        k=' '.join([str(j) for j in i])
-        fileObject.write(k+"\n")
-    for i in all_performance_rf:
-        k=' '.join([str(j) for j in i])
-        fileObject.write(k+"\n")
-    fileObject.write('\n')
-    for i in all_performance_blend1:
-        k=' '.join([str(j) for j in i])
-        fileObject.write(k+"\n")
-
-    fileObject.close()
-    Figure = plt.figure()
-    plot_roc_curve(all_labels, all_prob[2], 'RPISeq-RF')
-    plot_roc_curve(all_labels, all_prob[3], 'RPI-SAN')
-    plot_roc_curve(all_labels, all_prob[4], 'IPMiner')
-    plot_roc_curve(all_labels, all_prob[5], 'PLRPIM')      
+   
+    Figure = plt.figure()    
+    plot_roc_curve(all_labels, all_prob[9], 'DRPLPI')    
+    plot_roc_curve(all_labels, all_prob[7], 'LGBM')
+    plot_roc_curve(all_labels, all_prob[6], 'XGB')
+    plot_roc_curve(all_labels, all_prob[3], 'AdaBoost')
+    plot_roc_curve(all_labels, all_prob[2], 'RF') 
+    plot_roc_curve(all_labels, all_prob[4], 'DT')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([-0.05, 1])
     plt.ylim([0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('ROC')
-    plt.legend(loc="lower right")
+    plt.legend(loc="lower right")     
     plt.show() 
    
 
