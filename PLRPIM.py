@@ -400,7 +400,6 @@ def PLRPIM():
     all_prob[5] = []
     all_prob[6] = []
     all_prob[7] = []
-    all_prob[8] = []
     for fold in range(num_cross_val):
         train1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val != fold])
         test1 = np.array([x for i, x in enumerate(X_data1) if i % num_cross_val == fold])
@@ -583,27 +582,7 @@ def PLRPIM():
         precision1, recall, pr_threshods = precision_recall_curve(real_labels, pred_period)
         aupr_score = auc(recall, precision1)        
         print "LGBM :", acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
-	all_performance_lgb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])
-
-
-        print ('ExtraTrees')
-        class_index = class_index + 1
-	prefilter_train = np.concatenate((train1, train2), axis = 1)
-        prefilter_test = np.concatenate((test1, test2), axis = 1)
-
-        etree = ExtraTreesClassifier()
-        etree.fit(prefilter_train, train_label_new)
-        etree_proba = etree.predict_proba(prefilter_test)[:, 1]
-        all_prob[class_index] = all_prob[class_index] + [val for val in etree_proba]
-        tmp_aver = [val1 + val2 / 4 for val1, val2 in zip(etree_proba, tmp_aver)]
-        y_pred_knn = transfer_label_from_prob(etree_proba)       
-        acc, precision, sensitivity, specificity, MCC = calculate_performace(len(real_labels), y_pred_knn, real_labels)
-	fpr, tpr, auc_thresholds = roc_curve(real_labels, y_pred_knn)
-        auc_score = auc(fpr, tpr)        
-        precision1, recall, pr_threshods = precision_recall_curve(real_labels, y_pred_knn)
-        aupr_score = auc(recall, precision1)
-        print "ExtraTrees :",acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score
-        all_performance_knn.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])         
+	all_performance_lgb.append([acc, precision, sensitivity, specificity, MCC, auc_score, aupr_score])  
 
 	print 'Ensemble Classifiers raw feature'
 	class_index = class_index + 1
@@ -660,7 +639,7 @@ def PLRPIM():
     
    
     Figure = plt.figure()    
-    plot_roc_curve(all_labels, all_prob[9], 'DRPLPI')    
+    plot_roc_curve(all_labels, all_prob[8], 'DRPLPI')    
     plot_roc_curve(all_labels, all_prob[7], 'LGBM')
     plot_roc_curve(all_labels, all_prob[6], 'XGB')
     plot_roc_curve(all_labels, all_prob[3], 'AdaBoost')
