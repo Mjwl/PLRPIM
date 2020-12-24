@@ -639,7 +639,7 @@ def PLRPIM():
     
    
     Figure = plt.figure()    
-    plot_roc_curve(all_labels, all_prob[8], 'DRPLPI')    
+    plot_roc_curve(all_labels, all_prob[8], 'PLRPIM')    
     plot_roc_curve(all_labels, all_prob[7], 'LGBM')
     plot_roc_curve(all_labels, all_prob[6], 'XGB')
     plot_roc_curve(all_labels, all_prob[3], 'AdaBoost')
